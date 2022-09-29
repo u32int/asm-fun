@@ -29,8 +29,8 @@ strlenLoop:
 strlenExit:
     ret
 
-exit_usage:
-    mov rax, 1                  ; file does not exist. print error msg and exit.
+exitUsage:
+    mov rax, 1
     mov rdi, STDERR
     mov rsi, info_usage 
     mov rdx, info_usage_len
@@ -40,13 +40,35 @@ exit_usage:
     mov rdi, 1
     syscall
 
+stdinLoop:
+    mov rax, 0                  ; read stdin
+    mov rdi, STDIN
+    mov rsi, buffer
+    mov rdx, BUFFERSIZE
+    syscall
+
+    mov r9, rax                 ; store read size
+
+    mov rax, 1                  ; print buffer
+    mov rdi, STDOUT
+    mov rsi, buffer
+
+    mov rdx, r9
+    cmp r9, BUFFERSIZE
+    jle stdinNoOverflow
+    mov rdx, BUFFERSIZE
+stdinNoOverflow:
+    syscall
+
+    jmp stdinLoop
+
 
 _start:
     pop r8                      ; store argc into r8
     pop rbx                     ; store argv[0] (program name) into rbx
 
     cmp r8, 1
-    je exit_usage
+    je stdinLoop                ; if no arguments are supplied, read stdin
 
 catLoop:
     dec r8 
